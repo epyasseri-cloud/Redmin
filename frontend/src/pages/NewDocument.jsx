@@ -23,6 +23,7 @@ function NewDocument() {
   const navigate = useNavigate()
   const { session } = useAuth()
 
+  const [entryMode, setEntryMode] = useState('auto')
   const [tipoDoc, setTipoDoc] = useState('')
   const [selectedFile, setSelectedFile] = useState(null)
 
@@ -39,6 +40,21 @@ function NewDocument() {
 
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
+
+  function handleModeChange(nextMode) {
+    setEntryMode(nextMode)
+    setSelectedFile(null)
+    setExtractedText('')
+    setOcrError('')
+    setOcrDone(false)
+    setExtractionMethod(null)
+    setDateError('')
+    setDateDone(nextMode === 'manual')
+    setSaveError('')
+    if (nextMode === 'manual') {
+      setExpiryDate('')
+    }
+  }
 
   function handleFileSelected(file) {
     setSelectedFile(file)
@@ -119,7 +135,7 @@ function NewDocument() {
   }
 
   const canExtract = tipoDoc && selectedFile && !isOcrProcessing
-  const showDateSection = ocrDone && !isOcrProcessing
+  const showDateSection = entryMode === 'manual' ? Boolean(tipoDoc) : ocrDone && !isOcrProcessing
   const showSaveSection = dateDone && !isExtractingDate
 
   return (
@@ -132,9 +148,28 @@ function NewDocument() {
           </Link>
           <h1>Nuevo documento</h1>
           <p>
-            Selecciona el tipo de documento, sube la imagen y el sistema extraera la fecha
-            de caducidad automaticamente.
+            Selecciona el tipo y el modo de captura. Puedes usar OCR automatico o registrar
+            la fecha manualmente.
           </p>
+        </div>
+
+        <div className="entry-mode-toggle" role="tablist" aria-label="Modo de registro">
+          <button
+            type="button"
+            className={`mode-chip ${entryMode === 'auto' ? 'mode-chip-active' : ''}`}
+            onClick={() => handleModeChange('auto')}
+          >
+            <i className="bi bi-magic" aria-hidden="true" />
+            Automatico (OCR)
+          </button>
+          <button
+            type="button"
+            className={`mode-chip ${entryMode === 'manual' ? 'mode-chip-active' : ''}`}
+            onClick={() => handleModeChange('manual')}
+          >
+            <i className="bi bi-pencil-square" aria-hidden="true" />
+            Manual
+          </button>
         </div>
 
         {/* Paso 1: Tipo de documento */}
@@ -159,7 +194,7 @@ function NewDocument() {
         </div>
 
         {/* Paso 2: Subir imagen y OCR */}
-        {tipoDoc ? (
+        {tipoDoc && entryMode === 'auto' ? (
           <div className="ocr-layout">
             <div className="ocr-upload-col">
               <h2 className="col-title">
@@ -239,11 +274,11 @@ function NewDocument() {
         {showDateSection ? (
           <div className="date-confirm-section">
             <h2 className="col-title">
-              <span className="step-badge">4</span>
+              <span className="step-badge">{entryMode === 'manual' ? '2' : '4'}</span>
               Fecha de caducidad
             </h2>
 
-            {extractionMethod ? (
+            {entryMode === 'auto' && extractionMethod ? (
               <span className={`method-badge method-${extractionMethod}`}>
                 <i
                   className={`bi ${
@@ -259,12 +294,25 @@ function NewDocument() {
               </span>
             ) : null}
 
+            {entryMode === 'manual' ? (
+              <span className="method-badge method-manual">
+                <i className="bi bi-pencil" aria-hidden="true" />
+                Registro manual de fecha
+              </span>
+            ) : null}
+
             <div className="date-input-row">
               <input
                 className="date-input"
                 type="date"
                 value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
+                onChange={(e) => {
+                  setExpiryDate(e.target.value)
+                  if (entryMode === 'manual') {
+                    setDateDone(Boolean(e.target.value))
+                    setDateError('')
+                  }
+                }}
                 aria-label="Fecha de caducidad"
               />
             </div>
