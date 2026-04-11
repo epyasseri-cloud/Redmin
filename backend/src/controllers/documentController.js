@@ -4,6 +4,10 @@ import { supabaseAdmin } from '../utils/supabaseClient.js'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
+function isValidDate(value) {
+  return typeof value === 'string' && DATE_RE.test(value)
+}
+
 export async function extractDocumentDate(req, res) {
   const { text, tipo_doc } = req.body
 
@@ -29,7 +33,7 @@ export async function createDocument(req, res) {
     return res.status(400).json({ message: 'Se requieren tipo_doc y expiry_date.' })
   }
 
-  if (!DATE_RE.test(expiry_date)) {
+  if (!isValidDate(expiry_date)) {
     return res.status(400).json({ message: 'La fecha debe estar en formato YYYY-MM-DD.' })
   }
 
@@ -47,21 +51,54 @@ export async function createDocument(req, res) {
   return res.status(201).json(data)
 }
 
-export async function updateDocumentExpiry(req, res) {
-  const { id } = req.params
-  const { expiry_date } = req.body
+export async function listMyDocuments(req, res) {
+  const { data, error } = await supabaseAdmin
+    .from('documents')
+    .select('id, tipo_doc, expiry_date, active, created_at, updated_at')
+    .eq('user_id', req.user.id)
+    .order('expiry_date', { ascending: true })
 
-  if (!expiry_date || !DATE_RE.test(expiry_date)) {
-    return res.status(400).json({ message: 'La fecha debe estar en formato YYYY-MM-DD.' })
+  if (error) {
+    console.error('[Documents] List error:', error.message)
+    return res.status(500).json({ message: 'No se pudieron cargar los documentos.' })
+  }
+
+  return res.json(data || [])
+}
+
+export async function updateDocument(req, res) {
+  const { id } = req.params
+  const { expiry_date, active } = req.body
+
+  const updates = { updated_at: new Date().toISOString() }
+
+  if (expiry_date !== undefined) {
+    if (!isValidDate(expiry_date)) {
+      return res.status(400).json({ message: 'La fecha debe estar en formato YYYY-MM-DD.' })
+    }
+
+    updates.expiry_date = expiry_date
+  }
+
+  if (active !== undefined) {
+    if (typeof active !== 'boolean') {
+      return res.status(400).json({ message: 'El campo active debe ser booleano.' })
+    }
+
+    updates.active = active
+  }
+
+  if (!updates.expiry_date && updates.active === undefined) {
+    return res.status(400).json({ message: 'Debes enviar expiry_date o active para actualizar.' })
   }
 
   const { data, error } = await supabaseAdmin
     .from('documents')
-    .update({ expiry_date, updated_at: new Date().toISOString() })
+    .update(updates)
     .eq('id', id)
     .eq('user_id', req.user.id)
     .select()
-    .single()
+    .maybeSingle()
 
   if (error) {
     console.error('[Documents] Update error:', error.message)
@@ -73,4 +110,27 @@ export async function updateDocumentExpiry(req, res) {
   }
 
   return res.json(data)
+}
+
+export async function deleteDocument(req, res) {
+  const { id } = req.params
+
+  const { data, error } = await supabaseAdmin
+    .from('documents')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', req.user.id)
+    .select('id')
+    .maybeSingle()
+
+  if (error) {
+    console.error('[Documents] Delete error:', error.message)
+    return res.status(500).json({ message: 'No se pudo eliminar el documento.' })
+  }
+
+  if (!data) {
+    return res.status(404).json({ message: 'Documento no encontrado.' })
+  }
+
+  return res.status(204).send()
 }

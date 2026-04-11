@@ -17,11 +17,19 @@ async function apiRequest(path, options = {}) {
     throw new Error(payload.message || 'Request failed')
   }
 
+  if (response.status === 204) {
+    return null
+  }
+
   return response.json()
 }
 
 export async function fetchMyProfile(accessToken) {
   return apiRequest('/api/auth/me', { method: 'GET', accessToken })
+}
+
+export async function fetchMyDocuments(accessToken) {
+  return apiRequest('/api/documents', { method: 'GET', accessToken })
 }
 
 export async function extractExpiryDate(text, tipoDoc, accessToken) {
@@ -41,10 +49,21 @@ export async function saveDocument(tipoDoc, expiryDate, accessToken) {
 }
 
 export async function updateDocumentDate(id, expiryDate, accessToken) {
+  return updateDocument(id, { expiry_date: expiryDate }, accessToken)
+}
+
+export async function updateDocument(id, payload, accessToken) {
   return apiRequest(`/api/documents/${id}`, {
     method: 'PATCH',
     accessToken,
-    body: { expiry_date: expiryDate },
+    body: payload,
+  })
+}
+
+export async function deleteDocument(id, accessToken) {
+  return apiRequest(`/api/documents/${id}`, {
+    method: 'DELETE',
+    accessToken,
   })
 }
 
