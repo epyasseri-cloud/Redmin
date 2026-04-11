@@ -4,6 +4,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import authRoutes from './routes/authRoutes.js'
+import ocrRoutes from './routes/ocrRoutes.js'
 
 const app = express()
 const port = process.env.PORT || 4000
@@ -14,6 +15,7 @@ app.use(express.json({ limit: '2mb' }))
 app.use(morgan('dev'))
 
 app.use('/api/auth', authRoutes)
+app.use('/api/ocr', ocrRoutes)
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'docremind-backend' })

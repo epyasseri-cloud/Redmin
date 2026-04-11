@@ -23,3 +23,23 @@ async function apiRequest(path, options = {}) {
 export async function fetchMyProfile(accessToken) {
   return apiRequest('/api/auth/me', { method: 'GET', accessToken })
 }
+
+export async function uploadImageForOcr(imageFile, accessToken) {
+  const formData = new FormData()
+  formData.append('image', imageFile)
+
+  const response = await fetch(`${API_BASE_URL}/api/ocr`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({ message: 'Error al procesar la imagen.' }))
+    throw new Error(payload.message || 'Error al procesar la imagen.')
+  }
+
+  return response.json()
+}

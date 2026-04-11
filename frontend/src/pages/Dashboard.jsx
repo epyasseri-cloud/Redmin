@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.jsx'
 
 function Dashboard() {
@@ -24,7 +24,11 @@ function Dashboard() {
           </ul>
 
           <div className="button-row">
-            <button className="button button-primary" type="button" onClick={handleLogout} disabled={loading}>
+            <Link className="button button-primary" to="/new-document">
+              <i className="bi bi-file-earmark-plus" aria-hidden="true" />
+              Agregar documento
+            </Link>
+            <button className="button button-outline" type="button" onClick={handleLogout} disabled={loading}>
               <i className="bi bi-box-arrow-right" aria-hidden="true" />
               Cerrar sesion
             </button>

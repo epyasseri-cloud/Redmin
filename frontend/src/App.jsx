@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
+import NewDocument from './pages/NewDocument.jsx'
 import Register from './pages/Register.jsx'
 
 function ProtectedRoute() {
@@ -40,6 +41,7 @@ function AppShell() {
           </Route>
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/new-document" element={<NewDocument />} />
           </Route>
         </Routes>
       </div>
