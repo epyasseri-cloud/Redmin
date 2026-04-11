@@ -8,22 +8,44 @@ import documentRoutes from './routes/documentRoutes.js'
 import ocrRoutes from './routes/ocrRoutes.js'
 import reminderRoutes from './routes/reminderRoutes.js'
 import { startReminderScheduler } from './cron/reminderJob.js'
+import {
+  authLimiter,
+  generalLimiter,
+  ocrLimiter,
+} from './middlewares/rateLimiter.js'
 
 const app = express()
 const port = process.env.PORT || 4000
+const isProd = process.env.NODE_ENV === 'production'
 
 app.use(helmet())
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173' }))
-app.use(express.json({ limit: '2mb' }))
-app.use(morgan('dev'))
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+)
+app.use(express.json({ limit: '500kb' }))
+app.use(morgan(isProd ? 'combined' : 'dev'))
 
-app.use('/api/auth', authRoutes)
+app.use('/api', generalLimiter)
+app.use('/api/auth', authLimiter, authRoutes)
 app.use('/api/documents', documentRoutes)
-app.use('/api/ocr', ocrRoutes)
+app.use('/api/ocr', ocrLimiter, ocrRoutes)
 app.use('/api/reminders', reminderRoutes)
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'docremind-backend' })
+})
+
+// Global error handler — never leaks stack traces to clients
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  console.error('[Unhandled error]', err.message)
+  res.status(err.status || 500).json({
+    message: isProd ? 'Error interno del servidor.' : err.message,
+  })
 })
 
 app.listen(port, () => {

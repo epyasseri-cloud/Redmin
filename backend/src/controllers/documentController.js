@@ -3,9 +3,22 @@ import { extractDateWithAI } from '../services/openaiService.js'
 import { supabaseAdmin } from '../utils/supabaseClient.js'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+const MAX_OCR_TEXT_LENGTH = 10_000
+const ALLOWED_TIPOS = new Set([
+  'dni_espanol',
+  'pasaporte',
+  'licencia_conducir',
+  'tarjeta_residencia',
+  'seguro',
+  'otro',
+])
 
 function isValidDate(value) {
   return typeof value === 'string' && DATE_RE.test(value)
+}
+
+function isAllowedTipo(value) {
+  return typeof value === 'string' && ALLOWED_TIPOS.has(value)
 }
 
 export async function extractDocumentDate(req, res) {
@@ -13,6 +26,14 @@ export async function extractDocumentDate(req, res) {
 
   if (!text || !tipo_doc) {
     return res.status(400).json({ message: 'Se requieren los campos text y tipo_doc.' })
+  }
+
+  if (!isAllowedTipo(tipo_doc)) {
+    return res.status(400).json({ message: 'Tipo de documento no valido.' })
+  }
+
+  if (typeof text !== 'string' || text.length > MAX_OCR_TEXT_LENGTH) {
+    return res.status(400).json({ message: 'El texto supera el tamano maximo permitido.' })
   }
 
   let expiryDate = extractExpiryDate(text)
@@ -31,6 +52,10 @@ export async function createDocument(req, res) {
 
   if (!tipo_doc || !expiry_date) {
     return res.status(400).json({ message: 'Se requieren tipo_doc y expiry_date.' })
+  }
+
+  if (!isAllowedTipo(tipo_doc)) {
+    return res.status(400).json({ message: 'Tipo de documento no valido.' })
   }
 
   if (!isValidDate(expiry_date)) {
