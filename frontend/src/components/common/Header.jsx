@@ -13,6 +13,9 @@ function Header() {
   return (
     <header className="app-header">
       <NavLink className="brand-link" to="/">
+        <span className="brand-icon" aria-hidden="true">
+          <i className="bi bi-file-earmark-lock2" />
+        </span>
         DocRemind
       </NavLink>
 
