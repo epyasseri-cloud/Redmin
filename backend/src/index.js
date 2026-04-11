@@ -6,6 +6,8 @@ import morgan from 'morgan'
 import authRoutes from './routes/authRoutes.js'
 import documentRoutes from './routes/documentRoutes.js'
 import ocrRoutes from './routes/ocrRoutes.js'
+import reminderRoutes from './routes/reminderRoutes.js'
+import { startReminderScheduler } from './cron/reminderJob.js'
 
 const app = express()
 const port = process.env.PORT || 4000
@@ -18,6 +20,7 @@ app.use(morgan('dev'))
 app.use('/api/auth', authRoutes)
 app.use('/api/documents', documentRoutes)
 app.use('/api/ocr', ocrRoutes)
+app.use('/api/reminders', reminderRoutes)
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'docremind-backend' })
@@ -25,4 +28,5 @@ app.get('/api/health', (_req, res) => {
 
 app.listen(port, () => {
   console.log(`DocRemind backend listening on port ${port}`)
+  startReminderScheduler()
 })
