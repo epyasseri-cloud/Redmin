@@ -24,6 +24,30 @@ export async function fetchMyProfile(accessToken) {
   return apiRequest('/api/auth/me', { method: 'GET', accessToken })
 }
 
+export async function extractExpiryDate(text, tipoDoc, accessToken) {
+  return apiRequest('/api/documents/extract', {
+    method: 'POST',
+    accessToken,
+    body: { text, tipo_doc: tipoDoc },
+  })
+}
+
+export async function saveDocument(tipoDoc, expiryDate, accessToken) {
+  return apiRequest('/api/documents', {
+    method: 'POST',
+    accessToken,
+    body: { tipo_doc: tipoDoc, expiry_date: expiryDate },
+  })
+}
+
+export async function updateDocumentDate(id, expiryDate, accessToken) {
+  return apiRequest(`/api/documents/${id}`, {
+    method: 'PATCH',
+    accessToken,
+    body: { expiry_date: expiryDate },
+  })
+}
+
 export async function uploadImageForOcr(imageFile, accessToken) {
   const formData = new FormData()
   formData.append('image', imageFile)
