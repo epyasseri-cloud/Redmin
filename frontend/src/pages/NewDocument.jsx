@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth.jsx'
 import { extractExpiryDate, saveDocument, uploadImageForOcr } from '../services/api.js'
 
 const DOCUMENT_TYPES = [
+  { value: 'ine', label: 'INE (Credencial para votar)' },
   { value: 'dni_espanol', label: 'DNI / NIE español' },
   { value: 'pasaporte', label: 'Pasaporte' },
   { value: 'licencia_conducir', label: 'Licencia de conducir' },

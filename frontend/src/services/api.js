@@ -86,3 +86,10 @@ export async function uploadImageForOcr(imageFile, accessToken) {
 
   return response.json()
 }
+
+export async function sendTestReminderEmail(accessToken) {
+  return apiRequest('/api/reminders/test-email', {
+    method: 'POST',
+    accessToken,
+  })
+}

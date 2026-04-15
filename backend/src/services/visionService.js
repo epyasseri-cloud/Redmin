@@ -1,7 +1,7 @@
 import { createWorker } from 'tesseract.js'
 
 const VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate'
-let workerPromise = null
+const workerPromises = new Map()
 
 function getOcrProvider() {
   return (process.env.OCR_PROVIDER || 'auto').toLowerCase()
@@ -12,21 +12,41 @@ function hasGoogleVisionConfig() {
   return Boolean(apiKey && !apiKey.startsWith('YOUR_'))
 }
 
-async function getWorker() {
-  if (!workerPromise) {
-    const lang = process.env.OCR_LANG || 'spa+eng'
-    workerPromise = createWorker(lang)
+function getPreferredLocalLanguage() {
+  const lang = process.env.OCR_LANG || 'spa+eng'
+  return lang.trim() || 'spa+eng'
+}
+
+async function getWorker(lang) {
+  if (!workerPromises.has(lang)) {
+    workerPromises.set(lang, createWorker(lang))
   }
 
-  return workerPromise
+  return workerPromises.get(lang)
+}
+
+async function recognizeWithWorker(imageBuffer, lang) {
+  const worker = await getWorker(lang)
+  const result = await worker.recognize(imageBuffer)
+  return (result?.data?.text || '').trim()
 }
 
 async function extractTextWithLocalOcr(imageBuffer) {
+  const preferredLang = getPreferredLocalLanguage()
+
   try {
-    const worker = await getWorker()
-    const result = await worker.recognize(imageBuffer)
-    return (result?.data?.text || '').trim()
+    return await recognizeWithWorker(imageBuffer, preferredLang)
   } catch (error) {
+    const canFallbackToEnglish = preferredLang !== 'eng' && preferredLang.includes('+')
+
+    if (canFallbackToEnglish) {
+      try {
+        return await recognizeWithWorker(imageBuffer, 'eng')
+      } catch (fallbackError) {
+        throw new Error(`LOCAL_OCR_ERROR: ${fallbackError.message}`)
+      }
+    }
+
     throw new Error(`LOCAL_OCR_ERROR: ${error.message}`)
   }
 }
@@ -72,6 +92,31 @@ async function extractTextWithGoogleVision(imageBuffer) {
   return fullText.trim()
 }
 
+async function raceProviders(imageBuffer) {
+  const localTask = extractTextWithLocalOcr(imageBuffer)
+    .then((text) => ({ ok: true, text, provider: 'local' }))
+    .catch((error) => ({ ok: false, error, provider: 'local' }))
+
+  const googleTask = hasGoogleVisionConfig()
+    ? extractTextWithGoogleVision(imageBuffer)
+        .then((text) => ({ ok: true, text, provider: 'google' }))
+        .catch((error) => ({ ok: false, error, provider: 'google' }))
+    : Promise.resolve({ ok: false, error: new Error('VISION_CONFIG_MISSING'), provider: 'google' })
+
+  // Academic rubric: race two OCR providers and keep the first response.
+  const first = await Promise.race([googleTask, localTask])
+  if (first.ok && first.text) return first.text
+
+  const second = first.provider === 'google' ? await localTask : await googleTask
+  if (second.ok && second.text) return second.text
+
+  const error = second.error || first.error || new Error('No OCR provider available')
+  if (error.message.includes('LOCAL_OCR_ERROR')) {
+    throw error
+  }
+  throw new Error(`LOCAL_OCR_ERROR: ${error.message}`)
+}
+
 export async function extractTextFromImage(imageBuffer) {
   const provider = getOcrProvider()
 
@@ -83,20 +128,11 @@ export async function extractTextFromImage(imageBuffer) {
     return extractTextWithGoogleVision(imageBuffer)
   }
 
-  // auto mode: prefer Google if configured; fallback to local OCR on provider/config errors
-  if (hasGoogleVisionConfig()) {
-    try {
-      return await extractTextWithGoogleVision(imageBuffer)
-    } catch (error) {
-      console.warn('[OCR] Google Vision no disponible, usando OCR local:', error.message)
-    }
-  }
-
-  return extractTextWithLocalOcr(imageBuffer)
+  return raceProviders(imageBuffer)
 }
 
 process.on('exit', async () => {
-  if (workerPromise) {
+  for (const workerPromise of workerPromises.values()) {
     try {
       const worker = await workerPromise
       await worker.terminate()

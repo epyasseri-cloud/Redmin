@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.jsx'
 import EditDateModal from '../components/documents/EditDateModal.jsx'
 import {
   deleteDocument,
   fetchMyDocuments,
+  sendTestReminderEmail,
   updateDocument,
   updateDocumentDate,
 } from '../services/api.js'
@@ -16,6 +17,7 @@ const TYPE_LABELS = {
   tarjeta_residencia: 'Tarjeta de residencia',
   seguro: 'Seguro / Poliza',
   otro: 'Otro documento',
+  ine: 'INE (Credencial para votar)',
 }
 
 function formatDocumentType(value) {
@@ -34,8 +36,7 @@ function daysUntil(dateString) {
 }
 
 function Dashboard() {
-  const navigate = useNavigate()
-  const { loading, logout, profile, session, user } = useAuth()
+  const { session } = useAuth()
   const [documents, setDocuments] = useState([])
   const [isLoadingDocs, setIsLoadingDocs] = useState(true)
   const [docsError, setDocsError] = useState('')
@@ -43,6 +44,9 @@ function Dashboard() {
   const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [editError, setEditError] = useState('')
   const [busyDocId, setBusyDocId] = useState(null)
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false)
+  const [testEmailMessage, setTestEmailMessage] = useState('')
+  const [testEmailError, setTestEmailError] = useState('')
 
   const accessToken = session?.access_token
 
@@ -81,11 +85,6 @@ function Dashboard() {
       active = false
     }
   }, [accessToken])
-
-  async function handleLogout() {
-    await logout()
-    navigate('/login')
-  }
 
   async function handleToggleActive(doc) {
     setBusyDocId(doc.id)
@@ -128,6 +127,21 @@ function Dashboard() {
     }
   }
 
+  async function handleSendTestEmail() {
+    setIsSendingTestEmail(true)
+    setTestEmailError('')
+    setTestEmailMessage('')
+
+    try {
+      const response = await sendTestReminderEmail(accessToken)
+      setTestEmailMessage(response?.message || 'Correo de prueba enviado correctamente.')
+    } catch (error) {
+      setTestEmailError(error.message || 'No se pudo enviar el correo de prueba.')
+    } finally {
+      setIsSendingTestEmail(false)
+    }
+  }
+
   return (
     <main className="app-container">
       <section className="dashboard-card">
@@ -135,22 +149,34 @@ function Dashboard() {
         <p>Gestiona tus documentos y controla sus fechas de caducidad.</p>
 
         <div className="dashboard-meta">
-          <ul>
-            <li>Usuario autenticado: {user?.email || 'Sin email disponible'}</li>
-            <li>Perfil en Supabase: {profile?.email || 'Pendiente de sincronizar'}</li>
-            <li>SMS premium: {profile?.has_sms ? 'Activado' : 'Desactivado'}</li>
-          </ul>
-
           <div className="button-row">
             <Link className="button button-primary" to="/new-document">
               <i className="bi bi-file-earmark-plus" aria-hidden="true" />
               Agregar documento
             </Link>
-            <button className="button button-outline" type="button" onClick={handleLogout} disabled={loading}>
-              <i className="bi bi-box-arrow-right" aria-hidden="true" />
-              Cerrar sesion
+
+            <button
+              className="button button-secondary"
+              type="button"
+              onClick={handleSendTestEmail}
+              disabled={isSendingTestEmail}
+            >
+              <i className="bi bi-envelope-check" aria-hidden="true" />
+              {isSendingTestEmail ? 'Enviando prueba...' : 'Probar correo (Gmail/SendGrid)'}
             </button>
           </div>
+
+          {testEmailMessage ? (
+            <div className="alert alert-success" role="status">
+              {testEmailMessage}
+            </div>
+          ) : null}
+
+          {testEmailError ? (
+            <div className="alert alert-error" role="alert">
+              {testEmailError}
+            </div>
+          ) : null}
         </div>
 
         <div className="documents-section">

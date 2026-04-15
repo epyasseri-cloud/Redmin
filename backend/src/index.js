@@ -17,11 +17,39 @@ import {
 const app = express()
 const port = process.env.PORT || 4000
 const isProd = process.env.NODE_ENV === 'production'
+const defaultAllowedOrigins = ['http://localhost:5173', 'http://localhost:5174']
+const configuredOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : defaultAllowedOrigins
+
+function isAllowedOrigin(origin) {
+  if (!origin) {
+    return true
+  }
+
+  if (allowedOrigins.includes(origin)) {
+    return true
+  }
+
+  if (!isProd && /^http:\/\/localhost:\d+$/.test(origin)) {
+    return true
+  }
+
+  return false
+}
 
 app.use(helmet())
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin)) {
+        return callback(null, true)
+      }
+
+      return callback(new Error('Not allowed by CORS'))
+    },
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })

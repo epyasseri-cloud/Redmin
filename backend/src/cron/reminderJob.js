@@ -143,11 +143,22 @@ export async function runReminderCycle(source = 'manual') {
       daysRemaining,
     })
 
-    const emailResult = await sendEmailReminder({
-      to: profile.email,
-      subject,
-      text,
-    })
+    const smsEligible = profile.has_sms && profile.phone_number
+
+    // Academic rubric: run independent channel calls in parallel.
+    const [emailResult, smsResult] = await Promise.all([
+      sendEmailReminder({
+        to: profile.email,
+        subject,
+        text,
+      }),
+      smsEligible
+        ? sendSmsReminder({
+            to: profile.phone_number,
+            text,
+          })
+        : Promise.resolve({ channel: 'sms', sent: false, skipped: true, reason: 'missing_phone' }),
+    ])
 
     if (emailResult.sent) {
       stats.sentEmail += 1
@@ -155,22 +166,13 @@ export async function runReminderCycle(source = 'manual') {
       stats.errors += 1
     }
 
-    let smsSent = false
-    if (profile.has_sms && profile.phone_number) {
-      const smsResult = await sendSmsReminder({
-        to: profile.phone_number,
-        text,
-      })
-
-      if (smsResult.sent) {
-        stats.sentSms += 1
-        smsSent = true
-      } else if (!smsResult.skipped) {
-        stats.errors += 1
-      }
+    if (smsResult.sent) {
+      stats.sentSms += 1
+    } else if (!smsResult.skipped) {
+      stats.errors += 1
     }
 
-    if (emailResult.sent || smsSent) {
+    if (emailResult.sent || smsResult.sent) {
       await markReminderSent(doc.id)
     }
   }

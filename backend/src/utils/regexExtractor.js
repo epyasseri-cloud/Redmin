@@ -108,16 +108,40 @@ function collectDatesFromSegment(segment) {
   })
 }
 
+function collectYearRangesFromSegment(segment) {
+  const results = []
+  const p = /\b((?:19|20)\d{2})\s*[-–—]\s*((?:19|20)\d{2})\b/g
+  let m
+
+  while ((m = p.exec(segment)) !== null) {
+    const startYear = parseInt(m[1], 10)
+    const endYear = parseInt(m[2], 10)
+    if (Number.isNaN(startYear) || Number.isNaN(endYear)) continue
+
+    // Use the latest year and normalize to year start when day/month is unknown.
+    const latestYear = Math.max(startYear, endYear)
+    results.push({ iso: `${latestYear}-01-01`, index: m.index })
+  }
+
+  return results
+}
+
 export function extractExpiryDate(rawText) {
   if (!rawText) return null
 
-  // Strip diacritics and normalise whitespace
-  const text = rawText
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/\s+/g, ' ')
+  // Keep line boundaries while normalizing text for OCR noise.
+  const lines = rawText
+    .split(/[\n\r]+/)
+    .map((line) =>
+      line
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+    )
+    .filter(Boolean)
 
-  const lines = text.split(/[\n\r]+/)
+  const text = lines.join(' ')
 
   // Strategy 1: find lines with expiry keywords and extract nearby dates
   for (let i = 0; i < lines.length; i++) {
@@ -128,12 +152,17 @@ export function extractExpiryDate(rawText) {
       const searchArea = lines.slice(i, i + 3).join(' ')
       const dates = collectDatesFromSegment(searchArea)
       if (dates.length > 0) return dates[0].iso
+
+      const yearRanges = collectYearRangesFromSegment(searchArea)
+      if (yearRanges.length > 0) return yearRanges[0].iso
     }
   }
 
   // Strategy 2: collect all dates, prefer plausible expiry range (2020-2045)
   const allDates = collectDatesFromSegment(text)
-  if (allDates.length === 0) return null
+  const allYearRanges = collectYearRangesFromSegment(text)
+
+  if (allDates.length === 0 && allYearRanges.length === 0) return null
 
   const year = new Date().getFullYear()
   const plausible = allDates.filter((d) => {
@@ -141,7 +170,20 @@ export function extractExpiryDate(rawText) {
     return y >= 2020 && y <= year + 15
   })
 
-  if (plausible.length === 0) return allDates[0].iso
+  const plausibleRanges = allYearRanges.filter((d) => {
+    const y = parseInt(d.iso.split('-')[0], 10)
+    return y >= 2020 && y <= year + 20
+  })
+
+  if (plausibleRanges.length > 0) {
+    plausibleRanges.sort((a, b) => new Date(b.iso) - new Date(a.iso))
+    return plausibleRanges[0].iso
+  }
+
+  if (plausible.length === 0) {
+    if (allDates.length > 0) return allDates[0].iso
+    return allYearRanges[0].iso
+  }
 
   // Return the latest plausible date (expiry dates tend to be far ahead)
   plausible.sort((a, b) => new Date(b.iso) - new Date(a.iso))

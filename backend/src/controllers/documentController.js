@@ -5,6 +5,7 @@ import { supabaseAdmin } from '../utils/supabaseClient.js'
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const MAX_OCR_TEXT_LENGTH = 10_000
 const ALLOWED_TIPOS = new Set([
+  'ine',
   'dni_espanol',
   'pasaporte',
   'licencia_conducir',

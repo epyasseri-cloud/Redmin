@@ -3,7 +3,7 @@ import { useAuth } from '../../hooks/useAuth.jsx'
 
 function Header() {
   const navigate = useNavigate()
-  const { loading, user, logout } = useAuth()
+  const { loading, profile, user, logout } = useAuth()
 
   async function handleLogout() {
     await logout()
@@ -36,6 +36,16 @@ function Header() {
             <NavLink className="nav-link" to="/dashboard">
               Dashboard
             </NavLink>
+            <div className="header-user-meta" aria-label="Informacion de usuario">
+              <span className="user-inline-pill">
+                <i className="bi bi-person-circle" aria-hidden="true" />
+                {profile?.email || user?.email || 'Sin email'}
+              </span>
+              <span className="user-inline-pill">
+                <i className={`bi ${profile?.has_sms ? 'bi-bell-fill' : 'bi-bell-slash'}`} aria-hidden="true" />
+                SMS {profile?.has_sms ? 'Activado' : 'Desactivado'}
+              </span>
+            </div>
             <button
               className="icon-button"
               type="button"
