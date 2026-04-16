@@ -140,6 +140,20 @@ function collectYearRangesFromSegment(segment) {
     results.push({ iso: `${latestYear}-01-01`, index: m.index })
   }
 
+  // OCR may drop separators in values like "VIGENCIA 2023 2033".
+  const pLoose = /\b((?:19|20)\d{2})\s{1,4}((?:19|20)\d{2})\b/g
+  while ((m = pLoose.exec(segment)) !== null) {
+    const startYear = parseInt(m[1], 10)
+    const endYear = parseInt(m[2], 10)
+    if (Number.isNaN(startYear) || Number.isNaN(endYear)) continue
+
+    // Keep only realistic ranges to avoid random year pairs from OCR noise.
+    if (Math.abs(endYear - startYear) > 20) continue
+
+    const latestYear = Math.max(startYear, endYear)
+    results.push({ iso: `${latestYear}-01-01`, index: m.index })
+  }
+
   return results
 }
 
@@ -208,6 +222,11 @@ function rankDates(segment, dates) {
     })
 }
 
+function hasAnyKeyword(text, keywords) {
+  const lowered = text.toLowerCase()
+  return keywords.some((keyword) => lowered.includes(keyword))
+}
+
 function pickBestDate(segment, dates) {
   const rankedDates = rankDates(segment, dates)
 
@@ -230,6 +249,8 @@ export function extractExpiryDate(rawText) {
     .filter(Boolean)
 
   const text = lines.join(' ')
+  const hasExpiryContext = hasAnyKeyword(text, EXPIRY_KEYWORDS)
+  const hasBirthContext = hasAnyKeyword(text, BIRTH_KEYWORDS)
 
   // Strategy 1: find lines with expiry keywords and extract nearby dates
   for (let i = 0; i < lines.length; i++) {
@@ -292,7 +313,20 @@ export function extractExpiryDate(rawText) {
 
   if (plausible.length === 0) {
     if (allDates.length > 0) {
-      return pickBestDate(text, allDates) || allDates[allDates.length - 1].iso
+      const rankedAllDates = rankDates(text, allDates)
+      const topCandidate = rankedAllDates[0]
+
+      // If there is no expiry context and the best candidate looks like birth/issue date,
+      // return null so the caller can fall back to AI or manual selection.
+      if (!hasExpiryContext && hasBirthContext && (!topCandidate || topCandidate.score < 0)) {
+        return null
+      }
+
+      if (topCandidate && topCandidate.score >= -40) {
+        return topCandidate.iso
+      }
+
+      return null
     }
     return allYearRanges[0].iso
   }
