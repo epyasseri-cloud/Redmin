@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: component
+ * - Responsibility: upload image and request OCR extraction
+ * - Pipeline: file validation -> OCR API -> extracted text callback
+ */
+
 import { useRef, useState } from 'react'
 
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -81,7 +88,7 @@ function UploadDocument({ onFileSelected }) {
           <div className="upload-placeholder">
             <i className="bi bi-cloud-arrow-up upload-icon" aria-hidden="true" />
             <p>Arrastra una imagen aqui o haz clic para seleccionar</p>
-            <span>JPG, PNG o WEBP — maximo 5 MB</span>
+            <span>JPG, PNG o WEBP - maximo 5 MB</span>
           </div>
         )}
       </div>
@@ -107,3 +114,4 @@ function UploadDocument({ onFileSelected }) {
 }
 
 export default UploadDocument
+

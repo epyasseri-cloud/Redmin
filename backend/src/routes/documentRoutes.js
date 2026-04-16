@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: router
+ * - Responsibility: map document endpoints and extraction/test-email actions
+ * - Security: authenticated routes with id validation on mutations
+ */
+
 import { Router } from 'express'
 import {
   deleteDocument,
@@ -20,3 +27,4 @@ router.patch('/:id', requireAuth, validateId, updateDocument)
 router.delete('/:id', requireAuth, validateId, deleteDocument)
 
 export default router
+

@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: frontend hook
+ * - Responsibility: central auth/session/profile state management
+ * - Integration: Supabase auth events + backend profile fetch
+ */
+
 import { createContext, startTransition, useContext, useEffect, useState } from 'react'
 import {
   signInWithGoogle,

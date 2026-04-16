@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: controller
+ * - Responsibility: document CRUD, date extraction, and test email trigger
+ * - Validation: tipo_doc whitelist, ISO date format, ownership checks
+ */
+
 import { extractExpiryDate } from '../utils/regexExtractor.js'
 import { extractDateWithAI } from '../services/openaiService.js'
 import { supabaseAdmin } from '../utils/supabaseClient.js'
@@ -190,3 +197,4 @@ export async function sendTestReminderEmail(req, res) {
 
   return res.json({ ok: true, message: `Correo de prueba enviado a ${profile.email}.`, result })
 }
+

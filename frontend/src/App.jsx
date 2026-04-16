@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: frontend shell
+ * - Responsibility: router tree and auth-aware route guards
+ * - Behavior: gate protected routes and redirect guests/users
+ */
+
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import './App.css'
 import Header from './components/common/Header.jsx'

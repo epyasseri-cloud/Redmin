@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: middleware
+ * - Responsibility: validate image uploads and normalize multer errors
+ * - Policy: JPG/PNG/WEBP up to 5MB in memory
+ */
+
 import multer from 'multer'
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -36,3 +43,4 @@ export function handleUploadErrors(err, _req, res, next) {
 
   return next()
 }
+

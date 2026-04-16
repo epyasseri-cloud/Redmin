@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: service
+ * - Responsibility: centralized HTTP client for backend endpoints
+ * - Behavior: bearer auth headers + normalized error handling
+ */
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://localhost:4000' : '')
 
 async function apiRequest(path, options = {}) {

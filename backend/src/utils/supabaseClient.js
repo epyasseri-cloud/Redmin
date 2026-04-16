@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: utility
+ * - Responsibility: initialize backend Supabase admin client singleton
+ * - Security: service-role usage for server-side operations
+ */
+
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.SUPABASE_URL || 'https://example.supabase.co'

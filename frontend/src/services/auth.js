@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: service
+ * - Responsibility: Supabase auth wrappers for login/signup/oauth/logout
+ * - Behavior: propagates SDK errors to UI layer
+ */
+
 import { supabase } from './supabase.js'
 
 export async function signInWithPassword(credentials) {

@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: page
+ * - Responsibility: render registration flow container
+ * - Composition: wraps register form component
+ */
+
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import RegisterForm from '../components/auth/RegisterForm.jsx'

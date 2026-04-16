@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: service
+ * - Responsibility: fallback AI extraction of expiry date from OCR text
+ * - Behavior: strict YYYY-MM-DD normalization or null
+ */
+
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 
 export async function extractDateWithAI(text) {
@@ -47,3 +54,4 @@ export async function extractDateWithAI(text) {
     return null
   }
 }
+

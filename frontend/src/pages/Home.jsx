@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: page
+ * - Responsibility: public landing page and app introduction
+ * - Navigation: entry point to auth flow
+ */
+
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.jsx'
 

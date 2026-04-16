@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: service
+ * - Responsibility: send notifications via email/SMS providers
+ * - Providers: SendGrid/Gmail/Twilio with graceful fallback
+ */
+
 import sendgrid from '@sendgrid/mail'
 import nodemailer from 'nodemailer'
 import twilio from 'twilio'
@@ -161,3 +168,4 @@ export async function sendSmsReminder({ to, text }) {
     return { channel: 'sms', sent: false, error: error.message }
   }
 }
+

@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: middleware
+ * - Responsibility: validate Bearer token with Supabase and inject req.user
+ * - Failure mode: 401 on missing/invalid token
+ */
+
 import { supabaseAdmin } from '../utils/supabaseClient.js'
 
 export async function requireAuth(req, res, next) {

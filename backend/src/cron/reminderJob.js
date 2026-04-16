@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: scheduled job
+ * - Responsibility: find expiring documents and dispatch reminders
+ * - Behavior: deduplicate daily sends and return execution stats
+ */
+
 import cron from 'node-cron'
 import { supabaseAdmin } from '../utils/supabaseClient.js'
 import {
@@ -216,3 +223,4 @@ export function startReminderScheduler() {
 
   return task
 }
+

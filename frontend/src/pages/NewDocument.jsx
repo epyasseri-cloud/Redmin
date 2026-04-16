@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: page
+ * - Responsibility: create document workflow with OCR-assisted capture
+ * - Data flow: upload image, extract date, persist document
+ */
+
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import UploadDocument from '../components/documents/UploadDocument.jsx'
@@ -6,7 +13,7 @@ import { extractExpiryDate, saveDocument, uploadImageForOcr } from '../services/
 
 const DOCUMENT_TYPES = [
   { value: 'ine', label: 'INE (Credencial para votar)' },
-  { value: 'dni_espanol', label: 'DNI / NIE español' },
+  { value: 'dni_espanol', label: 'DNI / NIE espanol' },
   { value: 'pasaporte', label: 'Pasaporte' },
   { value: 'licencia_conducir', label: 'Licencia de conducir' },
   { value: 'tarjeta_residencia', label: 'Tarjeta de residencia' },
@@ -355,3 +362,4 @@ function NewDocument() {
 }
 
 export default NewDocument
+

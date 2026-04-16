@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: middleware
+ * - Responsibility: enforce per-route rate limits
+ * - Policy: general, auth, and OCR-specific throttling
+ */
+
 import rateLimit from 'express-rate-limit'
 
 const TOO_MANY = { message: 'Demasiadas solicitudes. Intenta de nuevo mas tarde.' }
@@ -25,3 +32,4 @@ export const ocrLimiter = rateLimit({
   legacyHeaders: false,
   message: { message: 'Limite de procesamiento de imagenes alcanzado. Intenta en una hora.' },
 })
+

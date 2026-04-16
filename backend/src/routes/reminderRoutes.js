@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: router
+ * - Responsibility: manual reminder execution and reminder test endpoints
+ * - Security: secret-protected run endpoint + authenticated test endpoint
+ */
+
 import { Router } from 'express'
 import { runReminderCycle } from '../cron/reminderJob.js'
 import { requireAuth } from '../middlewares/authMiddleware.js'
@@ -61,3 +68,4 @@ router.post('/test-email', requireAuth, async (req, res) => {
 })
 
 export default router
+

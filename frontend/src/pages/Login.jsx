@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: page
+ * - Responsibility: render login flow container
+ * - Composition: wraps login form component
+ */
+
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import LoginForm from '../components/auth/LoginForm.jsx'

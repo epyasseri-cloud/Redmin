@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: utility
+ * - Responsibility: fast regex-based expiry date extraction
+ * - Behavior: supports multiple date formats and bilingual keywords
+ */
+
 const MONTH_NAMES = {
   jan: '01', january: '01', ene: '01', enero: '01',
   feb: '02', february: '02', febrero: '02',
@@ -14,8 +21,8 @@ const MONTH_NAMES = {
 }
 
 const EXPIRY_KEYWORDS = [
-  'caducidad', 'caduca', 'valido hasta', 'válido hasta', 'valida hasta',
-  'válida hasta', 'fecha cad', 'vencimiento', 'expira', 'vigencia',
+  'caducidad', 'caduca', 'valido hasta', 'valida hasta',
+  'fecha cad', 'vencimiento', 'expira', 'vigencia',
   'date of expiry', 'expiry date', 'expiry', 'expires', 'expiration',
   'valid until', 'valid to', 'validity',
 ]
@@ -110,7 +117,7 @@ function collectDatesFromSegment(segment) {
 
 function collectYearRangesFromSegment(segment) {
   const results = []
-  const p = /\b((?:19|20)\d{2})\s*[-–—]\s*((?:19|20)\d{2})\b/g
+  const p = /\b((?:19|20)\d{2})\s*[-\u2013\u2014]\s*((?:19|20)\d{2})\b/g
   let m
 
   while ((m = p.exec(segment)) !== null) {
@@ -189,3 +196,4 @@ export function extractExpiryDate(rawText) {
   plausible.sort((a, b) => new Date(b.iso) - new Date(a.iso))
   return plausible[0].iso
 }
+

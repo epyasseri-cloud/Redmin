@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: service
+ * - Responsibility: initialize frontend Supabase client singleton
+ * - Config: uses VITE_SUPABASE env variables
+ */
+
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl =

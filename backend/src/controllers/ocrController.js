@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: controller
+ * - Responsibility: orchestrate OCR request/response lifecycle
+ * - Behavior: translate provider errors into user-safe HTTP messages
+ */
+
 import { extractTextFromImage } from '../services/visionService.js'
 
 export async function processOcr(req, res) {
@@ -44,3 +51,4 @@ export async function processOcr(req, res) {
     })
   }
 }
+

@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: controller
+ * - Responsibility: return authenticated profile from Supabase
+ * - Input/Output: req.user.id -> profile payload or error
+ */
+
 import { supabaseAdmin } from '../utils/supabaseClient.js'
 
 export async function getAuthenticatedProfile(req, res) {

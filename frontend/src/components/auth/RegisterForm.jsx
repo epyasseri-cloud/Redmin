@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: component
+ * - Responsibility: collect registration input and trigger sign-up
+ * - UX: validates and reports registration errors
+ */
+
 function RegisterForm({ error, isLoading, onSubmit, onGoogleLogin, successMessage }) {
   async function handleSubmit(event) {
     event.preventDefault()

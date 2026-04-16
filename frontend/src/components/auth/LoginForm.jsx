@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: component
+ * - Responsibility: collect credentials and trigger sign-in actions
+ * - UX: handles loading/error states for auth operations
+ */
+
 function LoginForm({ error, isLoading, onSubmit, onGoogleLogin }) {
   async function handleSubmit(event) {
     event.preventDefault()

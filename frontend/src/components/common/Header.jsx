@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: component
+ * - Responsibility: global navigation and session actions
+ * - Behavior: adapts links by authentication state
+ */
+
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.jsx'
 

@@ -1,9 +1,20 @@
+﻿/**
+ * Technical overview:
+ * - Layer: service
+ * - Responsibility: OCR provider abstraction (Google Vision / Tesseract)
+ * - Deployment: prefer Google Vision in Vercel to avoid serverless timeout
+ */
+
 import { createWorker } from 'tesseract.js'
 
 const VISION_API_URL = 'https://vision.googleapis.com/v1/images:annotate'
 const workerPromises = new Map()
 
 function getOcrProvider() {
+  // Tesseract local OCR is not viable in serverless environments (timeout + missing traineddata)
+  if (process.env.VERCEL === '1') {
+    return hasGoogleVisionConfig() ? 'google' : 'local'
+  }
   return (process.env.OCR_PROVIDER || 'auto').toLowerCase()
 }
 
@@ -141,3 +152,4 @@ process.on('exit', async () => {
     }
   }
 })
+

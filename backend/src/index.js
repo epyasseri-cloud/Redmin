@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: backend bootstrap
+ * - Responsibility: configure Express middleware, CORS, routes, and error handling
+ * - Deployment: exports app for Vercel serverless + local listen mode
+ */
+
 import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
@@ -91,7 +98,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'docremind-backend' })
 })
 
-// Global error handler — never leaks stack traces to clients
+// Global error handler - never leaks stack traces to clients
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
   console.error('[Unhandled error]', err.message)
@@ -112,3 +119,4 @@ if (isDirectRun && !isVercel) {
 }
 
 export default app
+

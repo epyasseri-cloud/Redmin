@@ -1,3 +1,10 @@
+﻿/**
+ * Technical overview:
+ * - Layer: component
+ * - Responsibility: edit and submit document expiry date updates
+ * - Behavior: controlled modal with optimistic UX hooks
+ */
+
 import { useEffect, useState } from 'react'
 
 function EditDateModal({ document, isSaving, error, onClose, onSave }) {
@@ -60,3 +67,4 @@ function EditDateModal({ document, isSaving, error, onClose, onSave }) {
 }
 
 export default EditDateModal
+
