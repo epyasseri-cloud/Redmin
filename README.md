@@ -90,6 +90,43 @@ Referencias tipicas:
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:4000` (segun configuracion)
 
+## 6.1) Despliegue en Vercel (frontend + backend)
+
+Este repo se despliega mejor como **2 proyectos en Vercel**:
+
+1. **Proyecto backend** (Root Directory: `backend`)
+2. **Proyecto frontend** (Root Directory: `frontend`)
+
+### Backend en Vercel
+
+- El backend ya esta preparado para Serverless con `backend/api/[...all].js`.
+- En Vercel, crea un proyecto nuevo apuntando al repo y selecciona `backend` como Root Directory.
+- Variables de entorno minimas en el proyecto backend:
+   - `FRONTEND_URL=https://TU_FRONTEND.vercel.app`
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `OPENAI_API_KEY` (si aplica)
+   - `GOOGLE_VISION_API_KEY` (si aplica)
+   - `EMAIL_PROVIDER`, `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` (si aplica)
+   - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_PHONE` (si aplica)
+   - `REMINDER_RUN_SECRET`
+- Endpoint health esperado: `https://TU_BACKEND.vercel.app/api/health`
+
+### Frontend en Vercel
+
+- Crea otro proyecto en Vercel con Root Directory `frontend`.
+- Variable de entorno requerida en el proyecto frontend:
+   - `VITE_API_BASE_URL=https://TU_BACKEND.vercel.app`
+- Si usas Supabase en el cliente, agrega tambien las variables `VITE_SUPABASE_*` que ya uses localmente.
+
+### Nota sobre scheduler (cron)
+
+- En Vercel Serverless no se mantiene un proceso vivo para `node-cron`.
+- Para ejecutar recordatorios en produccion:
+   - Opcion 1: usar **Vercel Cron Jobs** para llamar `POST /api/reminders/run` con header `x-reminder-secret`.
+   - Opcion 2: ejecutar ese endpoint desde un servicio externo (GitHub Actions, cron externo, etc.).
+
 ## 7) Endpoints y pruebas minimas sugeridas
 
 No es una lista exhaustiva, pero sirve para validar modulo por modulo:

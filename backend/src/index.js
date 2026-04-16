@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
+import { fileURLToPath } from 'url'
 import authRoutes from './routes/authRoutes.js'
 import documentRoutes from './routes/documentRoutes.js'
 import ocrRoutes from './routes/ocrRoutes.js'
@@ -17,23 +18,37 @@ import {
 const app = express()
 const port = process.env.PORT || 4000
 const isProd = process.env.NODE_ENV === 'production'
+const isVercel = process.env.VERCEL === '1'
+const allowVercelPreviews = process.env.ALLOW_VERCEL_PREVIEWS === 'true'
 const defaultAllowedOrigins = ['http://localhost:5173', 'http://localhost:5174']
+
+function normalizeOrigin(value) {
+  return String(value || '').trim().replace(/\/$/, '')
+}
+
 const configuredOrigins = (process.env.FRONTEND_URL || '')
   .split(',')
-  .map((origin) => origin.trim())
+  .map((origin) => normalizeOrigin(origin))
   .filter(Boolean)
-const allowedOrigins = configuredOrigins.length > 0 ? configuredOrigins : defaultAllowedOrigins
+const allowedOrigins =
+  configuredOrigins.length > 0 ? configuredOrigins : defaultAllowedOrigins.map((origin) => normalizeOrigin(origin))
 
 function isAllowedOrigin(origin) {
   if (!origin) {
     return true
   }
 
-  if (allowedOrigins.includes(origin)) {
+  const normalizedOrigin = normalizeOrigin(origin)
+
+  if (allowedOrigins.includes(normalizedOrigin)) {
     return true
   }
 
-  if (!isProd && /^http:\/\/localhost:\d+$/.test(origin)) {
+  if (isProd && allowVercelPreviews && /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(normalizedOrigin)) {
+    return true
+  }
+
+  if (!isProd && /^http:\/\/localhost:\d+$/.test(normalizedOrigin)) {
     return true
   }
 
@@ -76,7 +91,15 @@ app.use((err, _req, res, _next) => {
   })
 })
 
-app.listen(port, () => {
-  console.log(`DocRemind backend listening on port ${port}`)
-  startReminderScheduler()
-})
+const currentFilePath = fileURLToPath(import.meta.url)
+const entryFilePath = process.argv[1]
+const isDirectRun = currentFilePath === entryFilePath
+
+if (isDirectRun && !isVercel) {
+  app.listen(port, () => {
+    console.log(`DocRemind backend listening on port ${port}`)
+    startReminderScheduler()
+  })
+}
+
+export default app

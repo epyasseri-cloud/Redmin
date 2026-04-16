@@ -103,7 +103,7 @@ async function raceProviders(imageBuffer) {
         .catch((error) => ({ ok: false, error, provider: 'google' }))
     : Promise.resolve({ ok: false, error: new Error('VISION_CONFIG_MISSING'), provider: 'google' })
 
-  // Academic rubric: race two OCR providers and keep the first response.
+  
   const first = await Promise.race([googleTask, localTask])
   if (first.ok && first.text) return first.text
 
