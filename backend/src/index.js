@@ -73,6 +73,31 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 }
 
+app.use((req, res, next) => {
+  if (req.method !== 'OPTIONS') {
+    return next()
+  }
+
+  const requestOrigin = req.headers.origin
+
+  if (!isAllowedOrigin(requestOrigin)) {
+    return res.status(403).json({ message: 'Not allowed by CORS' })
+  }
+
+  if (requestOrigin) {
+    res.setHeader('Access-Control-Allow-Origin', normalizeOrigin(requestOrigin))
+    res.setHeader('Vary', 'Origin')
+  }
+
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS')
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    req.headers['access-control-request-headers'] || 'Content-Type, Authorization'
+  )
+
+  return res.sendStatus(204)
+})
+
 app.use(helmet())
 app.use(cors(corsOptions))
 app.use(express.json({ limit: '500kb' }))
