@@ -16,6 +16,7 @@ import {
 } from './middlewares/rateLimiter.js'
 
 const app = express()
+app.set('trust proxy', 1)
 const port = process.env.PORT || 4000
 const isProd = process.env.NODE_ENV === 'production'
 const isVercel = process.env.VERCEL === '1'
