@@ -24,8 +24,23 @@ function hasValidInternalSecret(req) {
   return providedSecret === expectedSecret
 }
 
+function hasValidCronSecret(req) {
+  const expectedSecret = process.env.CRON_SECRET
+  const authHeader = String(req.headers.authorization || '')
+
+  if (!expectedSecret || expectedSecret.startsWith('YOUR_')) {
+    return false
+  }
+
+  return authHeader === `Bearer ${expectedSecret}`
+}
+
+function canRunReminderCycle(req) {
+  return hasValidInternalSecret(req) || hasValidCronSecret(req)
+}
+
 router.post('/run', async (req, res) => {
-  if (!hasValidInternalSecret(req)) {
+  if (!canRunReminderCycle(req)) {
     return res.status(401).json({ message: 'Unauthorized reminder run.' })
   }
 
@@ -34,6 +49,20 @@ router.post('/run', async (req, res) => {
     return res.json({ ok: true, stats })
   } catch (error) {
     console.error('[Reminder] Error on manual run:', error.message)
+    return res.status(500).json({ ok: false, message: 'No se pudo ejecutar el ciclo de recordatorios.' })
+  }
+})
+
+router.get('/run', async (req, res) => {
+  if (!canRunReminderCycle(req)) {
+    return res.status(401).json({ message: 'Unauthorized reminder run.' })
+  }
+
+  try {
+    const stats = await runReminderCycle('cron')
+    return res.json({ ok: true, stats })
+  } catch (error) {
+    console.error('[Reminder] Error on cron run:', error.message)
     return res.status(500).json({ ok: false, message: 'No se pudo ejecutar el ciclo de recordatorios.' })
   }
 })
