@@ -21,6 +21,105 @@ const ALLOWED_TIPOS = new Set([
   'seguro',
   'otro',
 ])
+const EXPIRY_HINTS = [
+  'vigencia',
+  'vencimiento',
+  'caducidad',
+  'caduca',
+  'expira',
+  'expiry',
+  'expiration',
+  'valid until',
+  'valid to',
+  'validity',
+]
+const BIRTH_HINTS = [
+  'nacimiento',
+  'fecha de nacimiento',
+  'birth',
+  'date of birth',
+  'dob',
+]
+
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+}
+
+function hasAnyHint(text, hints) {
+  return hints.some((hint) => text.includes(hint))
+}
+
+function isTokenNearHint(text, token, hints, radius = 64) {
+  if (!token) return false
+
+  const tokenIndices = []
+  let from = 0
+  while (from < text.length) {
+    const idx = text.indexOf(token, from)
+    if (idx === -1) break
+    tokenIndices.push(idx)
+    from = idx + Math.max(1, token.length)
+  }
+
+  if (tokenIndices.length === 0) return false
+
+  for (const hint of hints) {
+    let hintFrom = 0
+    while (hintFrom < text.length) {
+      const hintIdx = text.indexOf(hint, hintFrom)
+      if (hintIdx === -1) break
+
+      for (const tokenIdx of tokenIndices) {
+        if (Math.abs(tokenIdx - hintIdx) <= radius) {
+          return true
+        }
+      }
+
+      hintFrom = hintIdx + Math.max(1, hint.length)
+    }
+  }
+
+  return false
+}
+
+function isLikelyBirthDate(rawText, isoDate) {
+  if (!rawText || !isoDate) return false
+
+  const normalized = normalizeText(rawText)
+  const [year, month, day] = isoDate.split('-')
+
+  if (!year || !month || !day) return false
+
+  const dayNum = String(Number(day))
+  const monthNum = String(Number(month))
+  const ddmmyyyyA = `${day}/${month}/${year}`
+  const ddmmyyyyB = `${dayNum}/${monthNum}/${year}`
+  const ddmmyyyyC = `${day}-${month}-${year}`
+  const ddmmyyyyD = `${dayNum}-${monthNum}-${year}`
+
+  const birthLinked =
+    isTokenNearHint(normalized, ddmmyyyyA, BIRTH_HINTS) ||
+    isTokenNearHint(normalized, ddmmyyyyB, BIRTH_HINTS) ||
+    isTokenNearHint(normalized, ddmmyyyyC, BIRTH_HINTS) ||
+    isTokenNearHint(normalized, ddmmyyyyD, BIRTH_HINTS) ||
+    isTokenNearHint(normalized, year, BIRTH_HINTS)
+
+  if (!birthLinked) return false
+
+  const expiryLinked =
+    isTokenNearHint(normalized, ddmmyyyyA, EXPIRY_HINTS) ||
+    isTokenNearHint(normalized, ddmmyyyyB, EXPIRY_HINTS) ||
+    isTokenNearHint(normalized, ddmmyyyyC, EXPIRY_HINTS) ||
+    isTokenNearHint(normalized, ddmmyyyyD, EXPIRY_HINTS) ||
+    isTokenNearHint(normalized, year, EXPIRY_HINTS)
+
+  if (expiryLinked) return false
+
+  return hasAnyHint(normalized, BIRTH_HINTS)
+}
 
 function isValidDate(value) {
   return typeof value === 'string' && DATE_RE.test(value)
@@ -48,8 +147,17 @@ export async function extractDocumentDate(req, res) {
   let expiryDate = extractExpiryDate(text)
   let method = 'regex'
 
+  if (expiryDate && isLikelyBirthDate(text, expiryDate)) {
+    expiryDate = null
+  }
+
   if (!expiryDate) {
-    expiryDate = await extractDateWithAI(text)
+    expiryDate = await extractDateWithAI(text, tipo_doc)
+
+    if (expiryDate && isLikelyBirthDate(text, expiryDate)) {
+      expiryDate = null
+    }
+
     method = expiryDate ? 'openai' : 'manual'
   }
 

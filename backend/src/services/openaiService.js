@@ -7,7 +7,7 @@
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 
-export async function extractDateWithAI(text) {
+export async function extractDateWithAI(text, tipoDoc = '') {
   const apiKey = process.env.OPENAI_API_KEY
 
   if (!apiKey || apiKey === 'YOUR_OPENAI_API_KEY') {
@@ -15,10 +15,13 @@ export async function extractDateWithAI(text) {
   }
 
   const prompt =
-    'Extract the expiry date from the following document text.\n' +
-    'Reply with ONLY the date in YYYY-MM-DD format.\n' +
-    'If there is no expiry date, reply with the word NULL.\n' +
-    'Do not add any explanation.\n\n' +
+    'Extract ONLY the document expiry date (fecha de vigencia / vencimiento / caducidad).\n' +
+    'Document type: ' + (tipoDoc || 'unknown') + '\n' +
+    'NEVER return date of birth (fecha de nacimiento / DOB), issue date, or registration date.\n' +
+    'If text contains a validity range like 2023-2033, return the final date as 2033-12-31.\n' +
+    'Reply with ONLY one date in YYYY-MM-DD format.\n' +
+    'If expiry date is not present with reasonable confidence, reply with NULL.\n' +
+    'Do not add explanations.\n\n' +
     `Document text:\n${text.slice(0, 2500)}`
 
   try {
@@ -45,7 +48,8 @@ export async function extractDateWithAI(text) {
 
     // Validate strict YYYY-MM-DD format
     if (/^\d{4}-\d{2}-\d{2}$/.test(reply)) {
-      const date = new Date(reply)
+      const [y, m, d] = reply.split('-').map(Number)
+      const date = new Date(y, m - 1, d)
       if (!isNaN(date.getTime())) return reply
     }
 
