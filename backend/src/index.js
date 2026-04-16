@@ -79,7 +79,7 @@ app.use(express.json({ limit: '500kb' }))
 app.use(morgan(isProd ? 'combined' : 'dev'))
 
 app.use('/api', generalLimiter)
-app.use('/api/auth', authLimiter, authRoutes)
+app.use('/api/session', authLimiter, authRoutes)
 app.use('/api/documents', documentRoutes)
 app.use('/api/ocr', ocrLimiter, ocrRoutes)
 app.use('/api/reminders', reminderRoutes)
