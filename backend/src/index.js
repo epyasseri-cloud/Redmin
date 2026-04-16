@@ -75,7 +75,6 @@ const corsOptions = {
 
 app.use(helmet())
 app.use(cors(corsOptions))
-app.options('*', cors(corsOptions))
 app.use(express.json({ limit: '500kb' }))
 app.use(morgan(isProd ? 'combined' : 'dev'))
 
