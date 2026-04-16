@@ -20,6 +20,7 @@ const port = process.env.PORT || 4000
 const isProd = process.env.NODE_ENV === 'production'
 const isVercel = process.env.VERCEL === '1'
 const allowVercelPreviews = process.env.ALLOW_VERCEL_PREVIEWS === 'true'
+const allowAllVercelOrigins = process.env.ALLOW_ALL_VERCEL_ORIGINS === 'true'
 const defaultAllowedOrigins = ['http://localhost:5173', 'http://localhost:5174']
 
 function normalizeOrigin(value) {
@@ -48,6 +49,10 @@ function isAllowedOrigin(origin) {
     return true
   }
 
+  if (isVercel && allowAllVercelOrigins && /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(normalizedOrigin)) {
+    return true
+  }
+
   if (!isProd && /^http:\/\/localhost:\d+$/.test(normalizedOrigin)) {
     return true
   }
@@ -55,20 +60,22 @@ function isAllowedOrigin(origin) {
   return false
 }
 
-app.use(helmet())
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (isAllowedOrigin(origin)) {
-        return callback(null, true)
-      }
+const corsOptions = {
+  origin(origin, callback) {
+    if (isAllowedOrigin(origin)) {
+      return callback(null, true)
+    }
 
-      return callback(new Error('Not allowed by CORS'))
-    },
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-)
+    return callback(new Error('Not allowed by CORS'))
+  },
+  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204,
+}
+
+app.use(helmet())
+app.use(cors(corsOptions))
+app.options('*', cors(corsOptions))
 app.use(express.json({ limit: '500kb' }))
 app.use(morgan(isProd ? 'combined' : 'dev'))
 
