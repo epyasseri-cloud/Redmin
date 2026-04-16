@@ -27,6 +27,16 @@ const EXPIRY_KEYWORDS = [
   'valid until', 'valid to', 'validity',
 ]
 
+const BIRTH_KEYWORDS = [
+  'nacimiento', 'fecha de nacimiento', 'fecha nacimiento', 'fec nac',
+  'birth', 'date of birth', 'dob',
+]
+
+const ISSUE_KEYWORDS = [
+  'emision', 'fecha de emision', 'expedicion', 'fecha de expedicion',
+  'issued', 'issue date', 'issuance',
+]
+
 function normalizeYear(raw) {
   if (raw.length === 2) {
     return parseInt(raw, 10) < 50 ? `20${raw}` : `19${raw}`
@@ -38,7 +48,7 @@ function buildIso(day, month, year) {
   const y = normalizeYear(String(year))
   const m = String(month).padStart(2, '0')
   const d = String(day).padStart(2, '0')
-  const date = new Date(`${y}-${m}-${d}`)
+  const date = new Date(Number(y), Number(m) - 1, Number(d))
   if (
     isNaN(date.getTime()) ||
     date.getFullYear() !== Number(y) ||
@@ -133,6 +143,77 @@ function collectYearRangesFromSegment(segment) {
   return results
 }
 
+function scoreDateCandidate(segment, candidate) {
+  const lowerSegment = segment.toLowerCase()
+  const candidateStart = candidate.index
+  const candidateEnd = candidate.index + candidate.iso.length
+  let score = 0
+
+  for (const keyword of EXPIRY_KEYWORDS) {
+    const keywordIndex = lowerSegment.indexOf(keyword)
+
+    if (keywordIndex === -1) continue
+
+    score += 120
+
+    const distance = Math.abs(candidateStart - keywordIndex)
+    score -= Math.min(distance, 120)
+
+    if (candidateStart >= keywordIndex) {
+      score += 40
+    }
+  }
+
+  for (const keyword of BIRTH_KEYWORDS) {
+    const keywordIndex = lowerSegment.indexOf(keyword)
+
+    if (keywordIndex === -1) continue
+
+    const distance = Math.abs(candidateStart - keywordIndex)
+    if (distance <= 40) {
+      score -= 250 - distance
+    }
+  }
+
+  for (const keyword of ISSUE_KEYWORDS) {
+    const keywordIndex = lowerSegment.indexOf(keyword)
+
+    if (keywordIndex === -1) continue
+
+    const distance = Math.abs(candidateStart - keywordIndex)
+    if (distance <= 40) {
+      score -= 140 - distance
+    }
+  }
+
+  const year = parseInt(candidate.iso.slice(0, 4), 10)
+  if (year >= new Date().getFullYear()) {
+    score += 20
+  }
+
+  score += Math.min(candidateEnd, 50)
+
+  return score
+}
+
+function rankDates(segment, dates) {
+  if (dates.length === 0) return []
+
+  return dates
+    .map((date) => ({ ...date, score: scoreDateCandidate(segment, date) }))
+    .sort((left, right) => {
+      if (right.score !== left.score) return right.score - left.score
+      if (right.index !== left.index) return right.index - left.index
+      return new Date(right.iso) - new Date(left.iso)
+    })
+}
+
+function pickBestDate(segment, dates) {
+  const rankedDates = rankDates(segment, dates)
+
+  return rankedDates[0]?.iso || null
+}
+
 export function extractExpiryDate(rawText) {
   if (!rawText) return null
 
@@ -158,9 +239,18 @@ export function extractExpiryDate(rawText) {
     if (hasKeyword) {
       const searchArea = lines.slice(i, i + 3).join(' ')
       const dates = collectDatesFromSegment(searchArea)
-      if (dates.length > 0) return dates[0].iso
-
       const yearRanges = collectYearRangesFromSegment(searchArea)
+      const rankedDates = rankDates(searchArea, dates)
+      const bestDateCandidate = rankedDates[0]
+
+      // In IDs like INE, a birth date can appear before "VIGENCIA 2023-2033".
+      // If the best full date has weak context but a year range exists, prefer the range end year.
+      if (yearRanges.length > 0 && (!bestDateCandidate || bestDateCandidate.score < 80)) {
+        return yearRanges[0].iso
+      }
+
+      if (bestDateCandidate) return bestDateCandidate.iso
+
       if (yearRanges.length > 0) return yearRanges[0].iso
     }
   }
@@ -177,6 +267,10 @@ export function extractExpiryDate(rawText) {
     return y >= 2020 && y <= year + 15
   })
 
+  const plausibleWithoutBirthContext = plausible.filter(
+    (date) => scoreDateCandidate(text, date) > -120
+  )
+
   const plausibleRanges = allYearRanges.filter((d) => {
     const y = parseInt(d.iso.split('-')[0], 10)
     return y >= 2020 && y <= year + 20
@@ -187,13 +281,22 @@ export function extractExpiryDate(rawText) {
     return plausibleRanges[0].iso
   }
 
+  const bestPlausibleDate = pickBestDate(
+    text,
+    plausibleWithoutBirthContext.length > 0 ? plausibleWithoutBirthContext : plausible
+  )
+
+  if (bestPlausibleDate) {
+    return bestPlausibleDate
+  }
+
   if (plausible.length === 0) {
-    if (allDates.length > 0) return allDates[0].iso
+    if (allDates.length > 0) {
+      return pickBestDate(text, allDates) || allDates[allDates.length - 1].iso
+    }
     return allYearRanges[0].iso
   }
 
-  // Return the latest plausible date (expiry dates tend to be far ahead)
-  plausible.sort((a, b) => new Date(b.iso) - new Date(a.iso))
-  return plausible[0].iso
+  return plausible[plausible.length - 1].iso
 }
 
