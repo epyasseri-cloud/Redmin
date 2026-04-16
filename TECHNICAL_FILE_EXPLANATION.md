@@ -107,8 +107,8 @@ This document explains the technical purpose and runtime behavior of the main so
 ### backend/src/services/visionService.js
 - Purpose: OCR provider abstraction.
 - Behavior:
-  - supports Google Vision and local Tesseract.
-  - in Vercel, prefers Google Vision to avoid serverless timeout.
+  - supports Azure Computer Vision, Google Vision, and local Tesseract.
+  - in Vercel, prefers cloud OCR to avoid serverless timeout.
   - supports race/fallback logic in auto mode.
 
 ## Backend - Utilities

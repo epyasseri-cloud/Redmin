@@ -27,9 +27,24 @@ export async function processOcr(req, res) {
   } catch (error) {
     console.error('[OCR] OCR processing error:', error.message)
 
+    if (error.message.includes('AZURE_VISION_CONFIG_MISSING')) {
+      return res.status(503).json({
+        message: 'Falta configurar AZURE_VISION_ENDPOINT y AZURE_VISION_KEY en el backend.',
+      })
+    }
+
     if (error.message.includes('VISION_CONFIG_MISSING')) {
       return res.status(503).json({
         message: 'Falta configurar GOOGLE_VISION_API_KEY en el backend.',
+      })
+    }
+
+    if (
+      error.message.includes('AZURE_VISION_ERROR') &&
+      /access denied|invalid|subscription|unauthorized|forbidden/i.test(error.message)
+    ) {
+      return res.status(503).json({
+        message: 'La configuracion de Azure Vision es invalida o no tiene permisos suficientes.',
       })
     }
 

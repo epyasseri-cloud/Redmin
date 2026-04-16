@@ -107,6 +107,7 @@ Este repo se despliega mejor como **2 proyectos en Vercel**:
    - `SUPABASE_ANON_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
    - `OPENAI_API_KEY` (si aplica)
+   - `AZURE_VISION_ENDPOINT`, `AZURE_VISION_KEY` (si aplica)
    - `GOOGLE_VISION_API_KEY` (si aplica)
    - `EMAIL_PROVIDER`, `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` (si aplica)
    - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_PHONE` (si aplica)
@@ -154,8 +155,10 @@ Invoke-RestMethod -Method Post -Uri "http://localhost:4000/api/reminders/run" -H
 
 ### OCR / IA / Notificaciones
 
-- `OCR_PROVIDER`: `auto`, `local` o `google`.
+- `OCR_PROVIDER`: `auto`, `local`, `google` o `azure`.
 - `OCR_LANG`: idioma de OCR local (ej. `spa+eng`).
+- `AZURE_VISION_ENDPOINT`: endpoint de Azure AI Vision / Computer Vision (ej. `https://<resource>.cognitiveservices.azure.com`).
+- `AZURE_VISION_KEY`: key del recurso de Azure Vision.
 - `GOOGLE_VISION_API_KEY`: clave para Vision API cuando se usa provider Google.
 - `OPENAI_API_KEY`: fallback opcional para modulos IA.
 - `EMAIL_PROVIDER`: `sendgrid` o `gmail`.
@@ -186,6 +189,6 @@ Nota: si SendGrid/Twilio no estan configurados, el ciclo de recordatorios no deb
 ## 10) Riesgos tecnicos a revisar (siguiente iteracion)
 
 - Cobertura de tests (actualmente no documentada en este repo).
-- Estrategia de reintento/fallos en servicios externos (Vision/OpenAI/SendGrid).
+- Estrategia de reintento/fallos en servicios externos (Azure Vision/Google Vision/OpenAI/SendGrid).
 - Politicas de rate limiting y validacion de archivos para OCR.
 - Observabilidad: trazas y metrica del job de recordatorios.
