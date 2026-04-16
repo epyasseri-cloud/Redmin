@@ -25,7 +25,11 @@ async function apiRequest(path, options = {}) {
 }
 
 export async function fetchMyProfile(accessToken) {
-  return apiRequest('/api/session/me', { method: 'GET', accessToken })
+  try {
+    return await apiRequest('/api/session/me', { method: 'GET', accessToken })
+  } catch {
+    return apiRequest('/api/auth/me', { method: 'GET', accessToken })
+  }
 }
 
 export async function fetchMyDocuments(accessToken) {
@@ -88,7 +92,7 @@ export async function uploadImageForOcr(imageFile, accessToken) {
 }
 
 export async function sendTestReminderEmail(accessToken) {
-  return apiRequest('/api/reminders/test-email', {
+  return apiRequest('/api/documents/test-email', {
     method: 'POST',
     accessToken,
   })

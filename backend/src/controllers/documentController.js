@@ -1,6 +1,7 @@
 import { extractExpiryDate } from '../utils/regexExtractor.js'
 import { extractDateWithAI } from '../services/openaiService.js'
 import { supabaseAdmin } from '../utils/supabaseClient.js'
+import { sendEmailReminder } from '../services/notificationService.js'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 const MAX_OCR_TEXT_LENGTH = 10_000
@@ -159,4 +160,33 @@ export async function deleteDocument(req, res) {
   }
 
   return res.status(204).send()
+}
+
+export async function sendTestReminderEmail(req, res) {
+  const { data: profile, error } = await supabaseAdmin
+    .from('profiles')
+    .select('email')
+    .eq('id', req.user.id)
+    .maybeSingle()
+
+  if (error) {
+    return res.status(500).json({ message: 'No se pudo cargar el perfil del usuario.' })
+  }
+
+  if (!profile?.email) {
+    return res.status(400).json({ message: 'No tienes un email configurado en tu perfil.' })
+  }
+
+  const result = await sendEmailReminder({
+    to: profile.email,
+    subject: 'Prueba de correo DocRemind',
+    text: 'Este es un correo de prueba para validar la configuracion de envio (Gmail o SendGrid).',
+  })
+
+  if (!result.sent) {
+    const reason = result.reason || result.error || 'No se pudo enviar el correo de prueba.'
+    return res.status(500).json({ ok: false, message: reason, result })
+  }
+
+  return res.json({ ok: true, message: `Correo de prueba enviado a ${profile.email}.`, result })
 }
