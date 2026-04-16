@@ -25,11 +25,7 @@ async function apiRequest(path, options = {}) {
 }
 
 export async function fetchMyProfile(accessToken) {
-  try {
-    return await apiRequest('/api/session/me', { method: 'GET', accessToken })
-  } catch {
-    return apiRequest('/api/auth/me', { method: 'GET', accessToken })
-  }
+  return apiRequest('/api/session/me', { method: 'GET', accessToken })
 }
 
 export async function fetchMyDocuments(accessToken) {
